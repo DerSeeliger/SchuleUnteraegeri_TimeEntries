@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Time Entry",
+  "version": "0.2.0",
+  "description": "One-click time logging to Excel via Microsoft Graph, with optional Teams messages.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "time-entry@david-vibecoding",
+      "strict_min_version": "115.0"
+    }
+  },
+  "icons": {
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
+  },
+  "action": {
+    "default_title": "Time Entry",
+    "default_popup": "popup/popup.html",
+    "default_icon": "icons/icon.svg"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "scripts": [
+      "shared/actions.js",
+      "lib/graph.js",
+      "lib/excel.js",
+      "lib/teams.js",
+      "background.js"
+    ]
+  },
+  "permissions": ["storage", "identity"],
+  "host_permissions": [
+    "https://login.microsoftonline.com/*",
+    "https://graph.microsoft.com/*",
+    "https://*.logic.azure.com/*",
+    "https://*.environment.api.powerplatform.com/*"
+  ]
+}

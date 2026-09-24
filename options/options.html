@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Time Entry Settings</title>
+  <link rel="stylesheet" href="../shared/style.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Time Entry settings</h1>
+
+    <section>
+      <h2>1. Microsoft account</h2>
+      <p class="muted">Use your company's Entra app registration. The README explains how to create one.</p>
+      <label class="field">
+        <span>Redirect URI <small class="muted">(add this to the app registration as a Single-page application)</small></span>
+        <div class="line">
+          <input id="redirectUri" type="text" readonly>
+          <button id="copyRedirect" type="button">Copy</button>
+        </div>
+      </label>
+      <label class="field">
+        <span>Directory (tenant) ID</span>
+        <input id="tenantId" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      </label>
+      <label class="field">
+        <span>Application (client) ID</span>
+        <input id="clientId" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      </label>
+      <div class="line">
+        <button id="signIn" type="button" class="primary">Sign in</button>
+        <button id="signOut" type="button" hidden>Sign out</button>
+      </div>
+      <div id="accountStatus" class="result"></div>
+    </section>
+
+    <section>
+      <h2>2. Excel file</h2>
+      <p class="muted">Paste the sharing link of the time file (Excel: <em>Share → Copy link</em>), click <em>Connect</em>,
+        then pick <strong>your</strong> sheet. The extension fills in today's row: date, arrival, lunch, back from lunch, and leaving.</p>
+      <label class="field">
+        <span>File link</span>
+        <input id="fileLink" type="text" autocomplete="off" spellcheck="false" placeholder="https://…sharepoint.com/…">
+      </label>
+      <div class="line">
+        <button id="connectFile" type="button" class="primary">Connect</button>
+      </div>
+      <label class="field">
+        <span>Your sheet</span>
+        <div class="line">
+          <select id="tableSelect" disabled><option value="">Connect the file first</option></select>
+          <button id="testFile" type="button">Test</button>
+        </div>
+      </label>
+      <div id="fileStatus" class="result"></div>
+    </section>
+
+    <section>
+      <h2>3. Mode</h2>
+      <label class="radio"><input type="radio" name="mode" value="normal" checked> Normal: log lunch start and end yourself</label>
+      <label class="radio"><input type="radio" name="mode" value="azubi"> Azubi: fixed 30-min lunch (12:15–12:45) added when you leave</label>
+    </section>
+
+    <section>
+      <h2>4. Teams messages <small class="muted">(optional)</small></h2>
+      <p class="muted">In the Teams group chat: <em>… → Workflows → "Post to a chat when a webhook request is received"</em>, then paste the URL here.
+        Messages are posted by the Workflows bot.</p>
+      <label class="radio"><input id="teamsEnabled" type="checkbox"> Send a message to Teams</label>
+      <label class="field">
+        <span>Webhook URL</span>
+        <div class="line">
+          <input id="webhookUrl" type="password" autocomplete="off" spellcheck="false" placeholder="https://…">
+          <button id="revealWebhook" type="button">Show</button>
+          <button id="testTeams" type="button">Send test</button>
+        </div>
+      </label>
+      <div id="teamsStatus" class="result"></div>
+      <p class="muted small">One message per line; a random one is picked each time. You can also paste a Power Automate
+        <code>createArray('…', '…')</code> expression or a JSON array, and it's split into lines automatically.
+        Your first name goes in front, unless the line contains <code>{name}</code> somewhere else. <code>{time}</code> = current time.
+        Leave an event empty to send no message for it.</p>
+      <div id="quips"></div>
+    </section>
+
+    <div class="actions">
+      <button id="save" type="button" class="primary">Save</button>
+      <span id="msg" role="status"></span>
+    </div>
+  </main>
+
+  <script src="../shared/actions.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
