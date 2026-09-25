@@ -260,7 +260,7 @@ $('testTeams').addEventListener('click', () => {
   withPermission(status, async () => {
     const { account } = await browser.storage.local.get('account');
     say(status, 'Sending…');
-    const r = await ask({ type: 'testTeams', chatId: chosenChat.id, text: `Test from Time Entry${account ? ` (${account.name})` : ''} ✅` });
+    const r = await ask({ type: 'testTeams', chatId: chosenChat.id, text: `Test from Time Entry Extension${account ? ` (${account.name})` : ''} ` });
     say(status, r.ok ? 'Sent. Check the chat.' : teamsError(r), r.ok ? 'ok' : 'err');
   });
 });
