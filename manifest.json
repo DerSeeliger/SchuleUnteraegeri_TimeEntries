@@ -1,12 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Time Entry",
-  "version": "0.2.0",
-  "description": "One-click time logging to Excel via Microsoft Graph, with optional Teams messages.",
+  "version": "1.0.0",
+  "description": "Clock in and out with one click. Writes your times to your Excel time sheet via Microsoft Graph, with optional Teams messages.",
+  "homepage_url": "https://github.com/DerSeeliger/SchuleUnteraegeri_TimeEntries",
   "browser_specific_settings": {
     "gecko": {
       "id": "time-entry@david-vibecoding",
-      "strict_min_version": "115.0"
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["authenticationInfo"],
+        "optional": ["personalCommunications"]
+      }
     }
   },
   "icons": {

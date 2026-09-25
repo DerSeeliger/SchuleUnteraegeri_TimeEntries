@@ -8,12 +8,20 @@ function say(el, text, cls = 'muted') {
 }
 
 // Must be called synchronously from a click handler, or Firefox won't show the prompt.
-function withPermission(statusEl, fn) {
-  browser.permissions.request({ origins: HOST_ORIGINS }).then((granted) => {
-    if (!granted) return say(statusEl, 'Firefox needs permission to reach Microsoft.', 'err');
+// `dataCollection` asks for optional data consent too (e.g. personalCommunications for Teams).
+function withPermission(statusEl, fn, dataCollection = []) {
+  const request = { origins: HOST_ORIGINS };
+  if (dataCollection.length) request.data_collection = dataCollection;
+  browser.permissions.request(request).then((granted) => {
+    if (!granted) {
+      const what = dataCollection.length ? 'permission to send Teams messages' : 'permission to reach Microsoft';
+      return say(statusEl, `Firefox needs ${what}.`, 'err');
+    }
     return fn();
   });
 }
+
+const TEAMS_DATA = ['personalCommunications'];
 
 function ask(msg) {
   return browser.runtime.sendMessage(msg);
@@ -224,7 +232,7 @@ $('allowTeams').addEventListener('click', () => {
     if (!r.ok) return say(status, r.error, 'err');
     $('allowTeams').textContent = 'Allow again';
     say(status, 'Teams access allowed. Now load your chats or paste a chat link.', 'ok');
-  });
+  }, TEAMS_DATA);
 });
 
 $('loadChats').addEventListener('click', () => {
@@ -262,7 +270,7 @@ $('testTeams').addEventListener('click', () => {
     say(status, 'Sending…');
     const r = await ask({ type: 'testTeams', chatId: chosenChat.id, text: `Test from Time Entry Extension${account ? ` (${account.name})` : ''} ` });
     say(status, r.ok ? 'Sent. Check the chat.' : teamsError(r), r.ok ? 'ok' : 'err');
-  });
+  }, TEAMS_DATA);
 });
 
 // --- Save ---
@@ -280,7 +288,7 @@ $('save').addEventListener('click', () => {
       teams: { enabled, chatId: chosenChat && chosenChat.id, chatName: chosenChat && chosenChat.name, quips },
     });
     say(msg, 'Saved ✓', 'ok');
-  });
+  }, enabled ? TEAMS_DATA : []);
 });
 
 browser.storage.onChanged.addListener((changes) => {
