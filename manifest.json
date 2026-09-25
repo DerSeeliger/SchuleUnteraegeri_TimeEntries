@@ -34,8 +34,6 @@
   "permissions": ["storage", "identity"],
   "host_permissions": [
     "https://login.microsoftonline.com/*",
-    "https://graph.microsoft.com/*",
-    "https://*.logic.azure.com/*",
-    "https://*.environment.api.powerplatform.com/*"
+    "https://graph.microsoft.com/*"
   ]
 }

@@ -13,7 +13,9 @@ browser.runtime.onMessage.addListener((msg) => {
     case 'selectTable': return reply(selectTable(msg.table));
     case 'testFile':    return reply(readToday());
     case 'sync':        return syncNow();
-    case 'testTeams':   return reply(postCard(msg.url, msg.text));
+    case 'enableTeams': return reply(enableTeams());
+    case 'listChats':   return reply(listChats());
+    case 'testTeams':   return reply(postChatMessage(msg.chatId, msg.text));
   }
 });
 

@@ -74,7 +74,7 @@ function buildQuips() {
 }
 
 async function loadForm() {
-  const s = await browser.storage.local.get(['tenantId', 'clientId', 'workbook', 'mode', 'teams']);
+  const s = await browser.storage.local.get(['tenantId', 'clientId', 'workbook', 'mode', 'teams', 'teamsConsent']);
   $('redirectUri').value = browser.identity.getRedirectURL();
   $('tenantId').value = s.tenantId || '';
   $('clientId').value = s.clientId || '';
@@ -84,7 +84,14 @@ async function loadForm() {
 
   const teams = s.teams || {};
   $('teamsEnabled').checked = !!teams.enabled;
-  $('webhookUrl').value = teams.webhookUrl || '';
+  if (teams.chatId) {
+    chosenChat = { id: teams.chatId, name: teams.chatName || teams.chatId };
+    fillChats([chosenChat], chosenChat.id);
+  }
+  if (s.teamsConsent) {
+    $('allowTeams').textContent = 'Allow again';
+    say($('teamsStatus'), 'Teams access allowed.', 'ok');
+  }
   const quips = teams.quips || DEFAULT_QUIPS;
   for (const [action, q] of Object.entries(quipInputs)) {
     q.area.value = (quips[action] || []).join('\n');
@@ -191,21 +198,70 @@ $('testFile').addEventListener('click', () => {
 
 // --- Teams ---
 
-$('revealWebhook').addEventListener('click', () => {
-  const input = $('webhookUrl');
-  input.type = input.type === 'password' ? 'text' : 'password';
-  $('revealWebhook').textContent = input.type === 'password' ? 'Show' : 'Hide';
+let chosenChat = null; // { id, name }
+
+// chats: [{ id, name }]
+function fillChats(chats, selected) {
+  const select = $('chatSelect');
+  const options = chats.map((c) => new Option(c.name, c.id, false, c.id === selected));
+  if (!selected) options.unshift(new Option('Choose a chat…', '', true, true));
+  select.replaceChildren(...options);
+  select.disabled = chats.length === 0;
+}
+
+// Graph answers 403 when the token lacks the chat permissions.
+function teamsError(r) {
+  return /403|scope|permission|consent|Forbidden/i.test(r.error)
+    ? `${r.error}. Click "Allow Teams access" first. If that fails, the Entra app may be missing ChatMessage.Send / Chat.ReadBasic.`
+    : r.error;
+}
+
+$('allowTeams').addEventListener('click', () => {
+  const status = $('teamsStatus');
+  withPermission(status, async () => {
+    say(status, 'Signing in with Teams access… (a Microsoft window opens)');
+    const r = await ask({ type: 'enableTeams' });
+    if (!r.ok) return say(status, r.error, 'err');
+    $('allowTeams').textContent = 'Allow again';
+    say(status, 'Teams access allowed. Now load your chats or paste a chat link.', 'ok');
+  });
+});
+
+$('loadChats').addEventListener('click', () => {
+  const status = $('teamsStatus');
+  withPermission(status, async () => {
+    say(status, 'Loading chats…');
+    const r = await ask({ type: 'listChats' });
+    if (!r.ok) return say(status, teamsError(r), 'err');
+    const chats = r.chats;
+    if (chosenChat && !chats.some((c) => c.id === chosenChat.id)) chats.unshift(chosenChat);
+    fillChats(chats, chosenChat && chosenChat.id);
+    say(status, chats.length ? `${chats.length} chats loaded. Pick one, then Save.` : 'No chats found. Paste a chat link instead.', 'ok');
+  });
+});
+
+$('chatSelect').addEventListener('change', (e) => {
+  const option = e.target.selectedOptions[0];
+  chosenChat = e.target.value ? { id: e.target.value, name: option.textContent } : null;
+});
+
+$('useChatLink').addEventListener('click', () => {
+  const id = chatIdFromInput($('chatLink').value);
+  $('chatLink').classList.toggle('invalid', !id);
+  if (!id) return say($('teamsStatus'), 'No chat ID found in that link. In Teams: right-click the chat → Copy link.', 'err');
+  chosenChat = { id, name: 'Chat from link' };
+  fillChats([chosenChat], id);
+  say($('teamsStatus'), 'Chat set from link. Send a test, then Save.', 'ok');
 });
 
 $('testTeams').addEventListener('click', () => {
   const status = $('teamsStatus');
-  const url = $('webhookUrl').value.trim();
-  if (!isAllowedWebhookUrl(url)) return say(status, 'Not a Teams workflow webhook URL.', 'err');
+  if (!chosenChat) return say(status, 'Choose a chat first.', 'err');
   withPermission(status, async () => {
     const { account } = await browser.storage.local.get('account');
     say(status, 'Sending…');
-    const r = await ask({ type: 'testTeams', url, text: `Test from Time Entry${account ? ` (${account.name})` : ''} ✅` });
-    say(status, r.ok ? 'Sent. Check the chat.' : r.error, r.ok ? 'ok' : 'err');
+    const r = await ask({ type: 'testTeams', chatId: chosenChat.id, text: `Test from Time Entry${account ? ` (${account.name})` : ''} ✅` });
+    say(status, r.ok ? 'Sent. Check the chat.' : teamsError(r), r.ok ? 'ok' : 'err');
   });
 });
 
@@ -213,18 +269,15 @@ $('testTeams').addEventListener('click', () => {
 
 $('save').addEventListener('click', () => {
   const msg = $('msg');
-  const webhookUrl = $('webhookUrl').value.trim();
   const enabled = $('teamsEnabled').checked;
-  $('webhookUrl').classList.toggle('invalid', !!webhookUrl && !isAllowedWebhookUrl(webhookUrl));
-  if (webhookUrl && !isAllowedWebhookUrl(webhookUrl)) return say(msg, 'Webhook URL is not a Teams workflow URL.', 'err');
-  if (enabled && !webhookUrl) return say(msg, 'Enter a webhook URL or turn Teams messages off.', 'err');
+  if (enabled && !chosenChat) return say(msg, 'Choose a Teams chat or turn Teams messages off.', 'err');
 
   const quips = {};
   for (const [action, q] of Object.entries(quipInputs)) quips[action] = parseQuips(q.area.value);
   withPermission(msg, async () => {
     await browser.storage.local.set({
       mode: document.querySelector('input[name="mode"]:checked').value,
-      teams: { enabled, webhookUrl, quips },
+      teams: { enabled, chatId: chosenChat && chosenChat.id, chatName: chosenChat && chosenChat.name, quips },
     });
     say(msg, 'Saved ✓', 'ok');
   });

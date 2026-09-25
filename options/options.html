@@ -64,17 +64,29 @@
 
     <section>
       <h2>4. Teams messages <small class="muted">(optional)</small></h2>
-      <p class="muted">In the Teams group chat: <em>… → Workflows → "Post to a chat when a webhook request is received"</em>, then paste the URL here.
-        Messages are posted by the Workflows bot.</p>
-      <label class="radio"><input id="teamsEnabled" type="checkbox"> Send a message to Teams</label>
+      <p class="muted">The extension posts the message itself, as <strong>you</strong>, into a Teams chat you choose.
+        No workflow or webhook needed. The first time, Microsoft asks you to allow chat access.</p>
+      <div class="line">
+        <button id="allowTeams" type="button" class="primary">Allow Teams access</button>
+        <button id="loadChats" type="button">Load my chats</button>
+      </div>
       <label class="field">
-        <span>Webhook URL</span>
+        <span>Chat</span>
         <div class="line">
-          <input id="webhookUrl" type="password" autocomplete="off" spellcheck="false" placeholder="https://…">
-          <button id="revealWebhook" type="button">Show</button>
-          <button id="testTeams" type="button">Send test</button>
+          <select id="chatSelect" disabled><option value="">Click "Load my chats" first</option></select>
         </div>
       </label>
+      <label class="field">
+        <span>…or paste a chat link <small class="muted">(Teams: right-click the chat → Copy link)</small></span>
+        <div class="line">
+          <input id="chatLink" type="text" autocomplete="off" spellcheck="false" placeholder="https://teams.microsoft.com/l/chat/19:…">
+          <button id="useChatLink" type="button">Use link</button>
+        </div>
+      </label>
+      <div class="line">
+        <label class="radio"><input id="teamsEnabled" type="checkbox"> Send a message to Teams</label>
+        <button id="testTeams" type="button">Send test</button>
+      </div>
       <div id="teamsStatus" class="result"></div>
       <p class="muted small">One message per line; a random one is picked each time. You can also paste a Power Automate
         <code>createArray('…', '…')</code> expression or a JSON array, and it's split into lines automatically.

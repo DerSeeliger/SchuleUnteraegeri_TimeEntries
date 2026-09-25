@@ -56,18 +56,15 @@ function pickRandom(list) {
 const HOST_ORIGINS = [
   'https://login.microsoftonline.com/*',
   'https://graph.microsoft.com/*',
-  'https://*.logic.azure.com/*',
-  'https://*.environment.api.powerplatform.com/*',
 ];
-const WEBHOOK_HOST_SUFFIXES = ['.logic.azure.com', '.environment.api.powerplatform.com'];
 
-function isAllowedWebhookUrl(value) {
-  try {
-    const u = new URL(value);
-    return u.protocol === 'https:' && WEBHOOK_HOST_SUFFIXES.some((s) => u.hostname.endsWith(s));
-  } catch {
-    return false;
-  }
+// Extracts a Teams chat ID (19:…@thread.v2 etc.) from a raw ID or a chat link
+// like https://teams.microsoft.com/l/chat/19:…@thread.v2/conversations?…
+function chatIdFromInput(value) {
+  let text = value.trim();
+  try { text = decodeURIComponent(text); } catch { /* keep as typed */ }
+  const m = text.match(/19:[A-Za-z0-9_\-.]+@(thread\.v2|thread\.skype|unq\.gbl\.spaces)/);
+  return m ? m[0] : null;
 }
 
 function isToday(iso) {
